@@ -57,14 +57,27 @@ class DanModel(BaseModel):
         Define the model's parameters, e.g., embedding layer, feedforward layer.
         Pass hyperparameters explicitly or use self.args to access the hyperparameters.
         """
-        raise NotImplementedError()
+        self.output_dim = self.tag_size
+        self.hidden_dim = self.args.hid_size
+        self.layers = nn.ModuleList()
+        self.embedding = nn.Embedding(len(self.vocab), self.args.emb_size)
+        current_dim = self.args.emb_size
+        for layer in range(self.args.hid_layer):
+            self.layers.append(nn.Linear(current_dim, self.args.hid_size))
+            current_dim = self.args.hid_size
+        self.layers.append(nn.Linear(current_dim, self.output_dim))
+
+        # raise NotImplementedError()
 
     def init_model_parameters(self):
         """
         Initialize the model's parameters by uniform sampling from a range [-v, v], e.g., v=0.08
         Pass hyperparameters explicitly or use self.args to access the hyperparameters.
         """
-        raise NotImplementedError()
+        for layer in self.layers:
+            nn.init.uniform_(layer.weight, -0.08, 0.08)
+            nn.init.zeros_(layer.bias)
+        # raise NotImplementedError()
 
     def copy_embedding_from_numpy(self):
         """
@@ -83,5 +96,19 @@ class DanModel(BaseModel):
             x: (torch.LongTensor), [batch_size, seq_length]
         Return:
             scores: (torch.FloatTensor), [batch_size, ntags]
-        """
-        raise NotImplementedError()
+        """ 
+        x = self.embedding(x)
+        if self.args.pooling_method == 'avg':
+            x = torch.mean(x, dim=1)
+        elif self.args.pooling_method == 'max':
+            x = torch.max(x, dim=1)[0]
+        elif self.args.pooling_method == 'sum':
+            x = torch.sum(x, dim=1)
+        else:
+            raise ValueError('Invalid pooling method')
+        for layer in self.layers[:-1]:
+            x = layer(x)
+            x = torch.relu(x)
+        x = self.layers[-1](x)
+        return x
+        # raise NotImplementedError()
