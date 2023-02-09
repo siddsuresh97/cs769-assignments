@@ -1,8 +1,11 @@
 # Step 0. Change this to your campus ID
-CAMPUSID='9xx1234567'
+CAMPUSID='9082521510'
 mkdir -p $CAMPUSID
 
 # Step 1. (Optional) Any preprocessing step, e.g., downloading pre-trained word embeddings
+# wget fasttext as zip file
+# wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip -P data/
+
 
 
 # Step 2. Train models on two datasets.

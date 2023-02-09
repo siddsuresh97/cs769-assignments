@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+assignment1/data/wiki-news-300d-1M.vec.zip

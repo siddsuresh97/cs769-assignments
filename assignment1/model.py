@@ -39,7 +39,17 @@ def load_embedding(vocab, emb_file, emb_size):
     Return:
         emb: (np.array), embedding matrix of size (|vocab|, emb_size) 
     """
-    raise NotImplementedError()
+    # load pre-trained word embeddings
+    emb = np.zeros((len(vocab), emb_size))
+    with zipfile.ZipFile(emb_file) as zf:
+        with zf.open(emb_file.split('/')[-1].replace('.zip', '')) as f:
+            for line in f:
+                line = line.decode('utf-8').split()
+                word = line[0]
+                if word in vocab:
+                    emb[vocab[word]] = np.array(line[1:], dtype=np.float32)
+    return emb
+    # raise NotImplementedError()
 
 
 class DanModel(BaseModel):
@@ -74,8 +84,10 @@ class DanModel(BaseModel):
         Initialize the model's parameters by uniform sampling from a range [-v, v], e.g., v=0.08
         Pass hyperparameters explicitly or use self.args to access the hyperparameters.
         """
+        nn.init.xavier_normal_(self.embedding.weight)
         for layer in self.layers:
-            nn.init.uniform_(layer.weight, -0.08, 0.08)
+            #do xavier normal
+            nn.init.xavier_normal_(layer.weight)
             nn.init.zeros_(layer.bias)
         # raise NotImplementedError()
 
@@ -84,7 +96,13 @@ class DanModel(BaseModel):
         Load pre-trained word embeddings from numpy.array to nn.embedding
         Pass hyperparameters explicitly or use self.args to access the hyperparameters.
         """
-        raise NotImplementedError()
+        # load pre-trained word embeddings
+        emb = load_embedding(self.vocab, self.args.emb_file, self.args.emb_size)
+        # copy the embeddings to the embedding layer
+        self.embedding.weight.data.copy_(torch.from_numpy(emb))
+        # set the embedding layer to be untrainable
+        self.embedding.weight.requires_grad = False
+        # raise NotImplementedError()
 
     def forward(self, x):
         """
@@ -97,7 +115,13 @@ class DanModel(BaseModel):
         Return:
             scores: (torch.FloatTensor), [batch_size, ntags]
         """ 
+        # change type to float
+        # if self.args.word_drop > 0:
+        #     mask = torch.rand(*x.size()).to(x.device) > self.args.word_drop
+        #     x = x.where(mask, torch.zeros_like(x))
         x = self.embedding(x)
+        # add embedding dropout
+        # x = nn.Dropout(p=self.args.emb_drop)(x)
         if self.args.pooling_method == 'avg':
             x = torch.mean(x, dim=1)
         elif self.args.pooling_method == 'max':
@@ -108,6 +132,8 @@ class DanModel(BaseModel):
             raise ValueError('Invalid pooling method')
         for layer in self.layers[:-1]:
             x = layer(x)
+            # add dropout
+            # x = nn.Dropout(p=self.args.hid_drop)(x)
             x = torch.relu(x)
         x = self.layers[-1](x)
         return x

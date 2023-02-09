@@ -15,7 +15,7 @@ def get_args():
     parser.add_argument("--train", type=str, default="data/sst-train.txt")
     parser.add_argument("--dev", type=str, default="data/sst-dev.txt")
     parser.add_argument("--test", type=str, default="data/sst-test.txt")
-    parser.add_argument("--emb_file", type=str, default=None)
+    parser.add_argument("--emb_file", type=str, default="data/wiki-news-300d-1M.vec.zip")
     parser.add_argument("--emb_size", type=int, default=300)
     parser.add_argument("--hid_size", type=int, default=300)
     parser.add_argument("--hid_layer", type=int, default=3)
@@ -24,8 +24,8 @@ def get_args():
     parser.add_argument("--hid_drop", type=float, default=0.333)
     parser.add_argument("--pooling_method", type=str, default="avg", choices=["sum", "avg", "max"])
     parser.add_argument("--grad_clip", type=float, default=5.0)
-    parser.add_argument("--max_train_epoch", type=int, default=5)
-    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--max_train_epoch", type=int, default=20)
+    parser.add_argument("--batch_size", type=int, default=1024)
     parser.add_argument("--lrate", type=float, default=0.005)
     parser.add_argument("--lrate_decay", type=float, default=0)  # 0 means no decay!
     parser.add_argument("--mrate", type=float, default=0.85)
@@ -134,7 +134,7 @@ def evaluate(dataset, model, device, tag_vocab=None, filename=None):
 
 def main():
     args = get_args()
-    _seed = os.environ.get("MINNN_SEED", 12341)
+    _seed = os.environ.get("MINNN_SEED", 42)
     random.seed(_seed)
     np.random.seed(_seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
